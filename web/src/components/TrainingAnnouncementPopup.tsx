@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { supabase, type Training } from "@/lib/supabase";
+import { type Training } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { 
   X, 
@@ -29,17 +29,12 @@ export function TrainingAnnouncementPopup() {
 
     async function loadUpcomingTraining() {
       try {
-        const { data, error } = await supabase
-          .from("trainings")
-          .select("*")
-          .eq("is_active", true)
-          .order("date_start", { ascending: true })
-          .limit(1)
-          .maybeSingle();
+        const res = await fetch("/api/trainings/upcoming", { cache: "no-store" });
+        if (!res.ok) return;
+        const json = await res.json();
+        const data = json.data as Training | null;
 
-        if (error || !data) {
-          return;
-        }
+        if (!data) return;
 
         // Vérifier si l'utilisateur a déjà fermé ce popup pendant sa session
         const isDismissed = sessionStorage.getItem(`ncp_training_popup_${data.id}`);

@@ -60,21 +60,33 @@ export default async function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-background selection:bg-accent selection:text-white">
       {/* 1. HERO SECTION ULTRA-MODERNE */}
-      <section className="relative bg-gradient-to-b from-[#0a1435] via-[#112255] to-[#152e75] text-white pt-20 pb-28 md:pt-28 md:pb-36 overflow-hidden">
+      <section className="relative bg-[#07112c] text-white pt-20 pb-28 md:pt-28 md:pb-36 overflow-hidden">
+        {/* Background Image Hero */}
+        <div className="absolute inset-0 z-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero.jpg"
+            alt="NCP Laboratoire et Matières Premières Chimiques"
+            className="w-full h-full object-cover object-center opacity-85"
+          />
+          {/* Subtle Gradient Overlay pour faire ressortir l'image avec netteté */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#07112c]/70 via-[#07112c]/40 to-[#07112c]/80" />
+        </div>
+
         {/* Luminous Ambient Glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-10 w-[400px] h-[400px] bg-accent/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl pointer-events-none z-0" />
+        <div className="absolute bottom-0 right-10 w-[400px] h-[400px] bg-accent/15 rounded-full blur-3xl pointer-events-none z-0" />
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             {/* Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs sm:text-sm font-semibold text-white shadow-xs">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-semibold text-white shadow-lg">
               <Sparkles className="h-4 w-4 text-accent" />
               <span>Fournisseur Chimique Agréé & Académie NCP en Haïti</span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold font-heading tracking-tight leading-[1.1]">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold font-heading tracking-tight leading-[1.1] drop-shadow-md">
               L&apos;Excellence Chimique <br />
               <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 bg-clip-text text-transparent">
                 & Formations Pratiques
@@ -82,7 +94,7 @@ export default async function Home() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base sm:text-lg md:text-xl text-blue-100/90 max-w-2xl mx-auto font-normal leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-white/95 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow-sm">
               Votre partenaire direct en Haïti pour les matières premières pures de détergents, cosmétiques et parfums, avec un accompagnement pratique certifié.
             </p>
 
