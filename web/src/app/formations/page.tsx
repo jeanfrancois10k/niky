@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { supabase, type Training } from "@/lib/supabase";
-import { Calendar, MapPin, Users, GraduationCap, Smartphone, Sparkles, CheckCircle2 } from "lucide-react";
+import { Calendar, MapPin, Users, GraduationCap, Smartphone, Sparkles, CheckCircle2, Award, Globe2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,24 +26,74 @@ export default async function FormationsPage() {
     <div className="min-h-screen bg-muted/15 py-12 md:py-16">
       <div className="container mx-auto px-4">
         {/* Header Hero Banner */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary font-bold text-xs uppercase tracking-wider">
-            <GraduationCap className="h-4 w-4" /> Académie Pratique NCP • Haïti
+            <GraduationCap className="h-4 w-4" /> Niky Académie de Formation (NAF) • Haïti
           </div>
           <h1 className="font-heading text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight">
             Formations Professionnelles & Certifiées
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-            Des ateliers 100% pratiques encadrés par des chimistes pour maîtriser la fabrication de détergents, cosmétiques et savons.
+            Des ateliers 100% pratiques encadrés par des chimistes pour maîtriser la fabrication de détergents, cosmétiques, parfums et savons.
           </p>
 
           <div className="pt-2 flex flex-wrap justify-center gap-4 text-xs font-semibold text-muted-foreground">
             <span className="flex items-center gap-1 bg-white border border-border px-3 py-1.5 rounded-full shadow-xs">
-              <CheckCircle2 className="h-4 w-4 text-green-600" /> Certificat Officiel Remis
+              <CheckCircle2 className="h-4 w-4 text-green-600" /> Certificat International Remis
             </span>
             <span className="flex items-center gap-1 bg-white border border-border px-3 py-1.5 rounded-full shadow-xs">
               <Smartphone className="h-4 w-4 text-red-600" /> Paiement par <strong>MonCash</strong>
             </span>
+          </div>
+        </div>
+
+        {/* NAF Institutional Presentation Card */}
+        <div className="max-w-4xl mx-auto mb-14 bg-white border border-border/80 rounded-3xl p-6 sm:p-10 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-72 h-72 bg-gradient-to-br from-primary/10 to-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="relative z-10 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+                  <Award className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
+                    Niky Académie de Formation (NAF)
+                  </h2>
+                  <span className="text-xs text-muted-foreground font-semibold">
+                    En collaboration exclusive avec Niky Chemical Product (NCP)
+                  </span>
+                </div>
+              </div>
+
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold">
+                <Globe2 className="h-3.5 w-3.5 text-amber-600" /> Portée Internationale
+              </span>
+            </div>
+
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+              <strong>Niky Chemical Product</strong> en collaboration avec <strong>Niky Académie de Formation (NAF)</strong>, s’engage à offrir une formation professionnelle de qualité, axée sur la pratique, l’innovation et le développement des compétences.
+            </p>
+
+            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+              À travers ses programmes, NAF propose une approche pédagogique combinant <strong>formation théorique, travaux pratiques, formulation, fabrication, contrôle de qualité, sécurité et entrepreneuriat</strong>, afin de préparer chaque apprenant aux exigences du monde professionnel.
+            </p>
+
+            <div className="bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-amber-50/70 p-4 sm:p-5 rounded-2xl border border-primary/15 text-xs sm:text-sm text-foreground space-y-1">
+              <p className="font-medium leading-relaxed">
+                Notre ambition est de développer une formation répondant à des standards de qualité à portée internationale. En collaboration avec nos partenaires internationaux, <strong>à la fin de chaque cycle nos étudiants recevront un certificat international.</strong>
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border/60">
+              <div className="font-heading font-extrabold text-sm sm:text-base text-primary tracking-wide">
+                NAF : apprendre, pratiquer, maîtriser et entreprendre.
+              </div>
+              <span className="text-xs text-muted-foreground font-semibold">
+                Diplôme & Certificat Officiel Remis
+              </span>
+            </div>
           </div>
         </div>
 

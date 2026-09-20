@@ -109,9 +109,9 @@ export default function AProposPage() {
               <div className="w-12 h-12 rounded-2xl bg-amber-50 text-accent flex items-center justify-center">
                 <GraduationCap className="h-6 w-6" />
               </div>
-              <h3 className="font-heading font-bold text-lg text-foreground">Académie Pratique</h3>
+              <h3 className="font-heading font-bold text-lg text-foreground">Niky Académie (NAF)</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Apprentissage 100% sur paillasse. Formulation, calcul du pH, conservation et remise d&apos;un certificat officiel NCP.
+                Apprentissage 100% sur paillasse : formulation, calcul du pH, fabrication et remise d&apos;un certificat international NAF.
               </p>
             </div>
 

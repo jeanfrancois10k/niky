@@ -82,14 +82,14 @@ export default async function Home() {
             {/* Pill Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/60 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-semibold text-white shadow-lg">
               <Sparkles className="h-4 w-4 text-accent" />
-              <span>Fournisseur Chimique Agréé & Académie NCP en Haïti</span>
+              <span>Fournisseurs des produits chimiques, et des formations en chimie industriel en Haïti</span>
             </div>
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold font-heading tracking-tight leading-[1.1] drop-shadow-md">
-              L&apos;Excellence Chimique <br />
+              L&apos;excellence en matière de produits chimiques <br />
               <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 bg-clip-text text-transparent">
-                & Formations Pratiques
+                et formation professionnelle
               </span>
             </h1>
 
@@ -238,7 +238,41 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 3. GUIDE INTERACTIF : QUE SOUHAITEZ-VOUS FABRIQUER ? */}
+      {/* 3. NAF — NIKY ACADÉMIE DE FORMATION */}
+      <section className="py-20 bg-[#0f1f4b] text-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <span className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400/20 text-amber-300 font-bold rounded-full text-xs uppercase tracking-wider border border-amber-400/30">
+              <GraduationCap className="h-4 w-4" /> Niky Académie de Formation (NAF)
+            </span>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold font-heading text-white leading-tight">
+              NAF : Apprendre, Pratiquer, Maîtriser et Entreprendre
+            </h2>
+            <div className="text-lg text-blue-100/90 leading-relaxed space-y-6 text-left bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
+              <p>
+                <strong className="text-amber-300">Niky Chemical Product</strong> en collaboration avec <strong className="text-amber-300">Niky Académie de Formation (NAF)</strong>, s&apos;engage à offrir une formation professionnelle de qualité, axée sur la pratique, l&apos;innovation et le développement des compétences.
+              </p>
+              <p>
+                À travers ses programmes, NAF propose une approche pédagogique combinant formation théorique, travaux pratiques, formulation, fabrication, contrôle de qualité, sécurité et entrepreneuriat, afin de préparer chaque apprenant aux exigences du monde professionnel.
+              </p>
+              <p>
+                Notre ambition est de développer une formation répondant à des standards de qualité à portée internationale. En collaboration avec nos partenaires internationaux, à la fin de chaque cycle nos étudiants recevront un certificat international.
+              </p>
+            </div>
+            <Link
+              href="/formations"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 rounded-2xl font-bold px-8 py-6 shadow-lg shadow-amber-500/25 transition-all hover:scale-[1.02] inline-flex items-center"
+              )}
+            >
+              <GraduationCap className="mr-2 h-5 w-5" /> Découvrir nos Formations
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. GUIDE INTERACTIF : QUE SOUHAITEZ-VOUS FABRIQUER ? */}
       <section className="py-20 bg-muted/20">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -341,7 +375,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 4. POPULAR PRODUCTS (DIRECTEMENT DU CATALOGUE) */}
+      {/* 5. POPULAR PRODUCTS (DIRECTEMENT DU CATALOGUE) */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-12">
@@ -441,7 +475,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* 5. LABORATOIRE & QUALITÉ DE FORMULATION */}
+      {/* 6. LABORATOIRE & QUALITÉ DE FORMULATION */}
       <section className="py-20 bg-muted/20 border-t border-b border-border">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
@@ -510,8 +544,6 @@ export default async function Home() {
           </div>
         </div>
       </section>
-
-      {/* 5. LABORATOIRE & QUALITÉ DE FORMULATION */}
 
       {/* 7. NEXT TRAINING BANNER */}
       {nextTraining && (

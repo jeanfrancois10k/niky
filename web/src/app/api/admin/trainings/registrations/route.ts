@@ -14,7 +14,15 @@ export interface ParticipantRecord {
   amount_paid: number;
   payment_method: string;
   status: string;
+  notes?: string;
   created_at: string;
+}
+
+interface OrderItem {
+  type?: string;
+  product_id?: string;
+  product_name?: string;
+  payment_method?: string;
 }
 
 export async function GET() {
@@ -35,30 +43,35 @@ export async function GET() {
       // Table may not exist yet
     }
 
-    // 2. Fetch from orders table where notes = 'INSCRIPTION_FORMATION'
+    // 2. Fetch from orders table where items have training type or notes contains training info
     try {
       const { data: orderData } = await supabaseAdmin
         .from("orders")
         .select("*")
-        .eq("notes", "INSCRIPTION_FORMATION")
         .order("created_at", { ascending: false });
 
       if (orderData && orderData.length > 0) {
         for (const o of orderData) {
-          const item = (o.items && o.items[0]) || {};
-          // Check if not already in list
-          if (!list.some((existing) => existing.id === o.id)) {
+          const items: OrderItem[] = Array.isArray(o.items) ? o.items : [];
+          const isTrainingOrder =
+            o.notes === "INSCRIPTION_FORMATION" ||
+            (typeof o.notes === "string" && o.notes.includes("NAF-")) ||
+            items.some((it) => it.type === "training");
+
+          if (isTrainingOrder && !list.some((existing) => existing.id === o.id)) {
+            const trainingItem = items.find((it) => it.type === "training") || items[0] || {};
             list.push({
               id: o.id,
-              training_id: item.product_id || "",
-              training_title: item.product_name || "Formation Professionnelle",
+              training_id: trainingItem.product_id || "",
+              training_title: trainingItem.product_name || "Formation Professionnelle NAF",
               customer_name: o.customer_name,
               customer_email: o.customer_email,
               customer_phone: o.customer_phone,
               city: o.city,
               amount_paid: Number(o.total) || 0,
-              payment_method: item.payment_method || "Sur place",
+              payment_method: trainingItem.payment_method || "Sur place",
               status: o.status || "confirmed",
+              notes: o.notes,
               created_at: o.created_at,
             });
           }

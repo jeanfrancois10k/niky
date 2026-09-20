@@ -69,130 +69,143 @@ export function TrainingAnnouncementPopup() {
   const isFull = remainingSeats <= 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-300">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-300"
+      onClick={(e) => {
+        // Close when clicking directly on backdrop
+        if (e.target === e.currentTarget) {
+          handleClose();
+        }
+      }}
+    >
       <div 
-        className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl relative border border-white/20 animate-in zoom-in-95 duration-300 flex flex-col"
+        className="bg-white rounded-3xl max-w-lg w-full max-h-[90dvh] shadow-2xl relative border border-white/20 animate-in zoom-in-95 duration-300 flex flex-col overflow-hidden"
         role="dialog"
         aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
+        {/* Prominent Close Button on Top Right */}
         <button
           onClick={handleClose}
-          className="absolute top-3.5 right-3.5 z-20 p-2 text-white bg-black/40 hover:bg-black/70 rounded-full backdrop-blur-md transition-all cursor-pointer shadow-md"
-          aria-label="Fermer la notification"
+          className="absolute top-3 right-3 z-30 p-2.5 text-white bg-black/60 hover:bg-black/85 active:scale-95 rounded-full backdrop-blur-md transition-all cursor-pointer shadow-lg border border-white/20"
+          aria-label="Fermer le popup"
+          title="Fermer"
         >
           <X className="h-5 w-5" />
         </button>
 
-        {/* Top Image Banner */}
-        <div className="relative aspect-[16/9] w-full bg-slate-900 overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={training.image || "/lab-distillation.jpg"}
-            alt={training.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a1435] via-[#0a1435]/40 to-transparent" />
+        {/* Scrollable Container for small screens */}
+        <div className="overflow-y-auto flex-1">
+          {/* Top Image Banner */}
+          <div className="relative h-40 sm:h-52 w-full bg-slate-900 overflow-hidden shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={training.image || "/lab-distillation.jpg"}
+              alt={training.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a1435] via-[#0a1435]/50 to-black/20" />
 
-          {/* Badges on image */}
-          <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-extrabold text-xs shadow-md uppercase tracking-wider">
-              <Sparkles className="h-3.5 w-3.5" /> Nouvelle Session Ouverte
-            </span>
-          </div>
-
-          <div className="absolute bottom-4 inset-x-4 flex justify-between items-end text-white">
-            <div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-300 block mb-0.5">
-                Académie Pratique NCP
+            {/* Badges on image */}
+            <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white font-extrabold text-[11px] shadow-md uppercase tracking-wider">
+                <Sparkles className="h-3 w-3" /> Nouvelle Formation
               </span>
-              <h3 className="font-heading font-extrabold text-xl sm:text-2xl leading-tight text-white drop-shadow-sm">
+            </div>
+
+            <div className="absolute bottom-3 inset-x-3 text-white">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-300 block mb-0.5">
+                Niky Académie de Formation (NAF)
+              </span>
+              <h3 className="font-heading font-extrabold text-base sm:text-xl leading-tight text-white drop-shadow-sm line-clamp-2">
                 {training.title}
               </h3>
             </div>
           </div>
-        </div>
 
-        {/* Modal Body */}
-        <div className="p-6 space-y-4 text-foreground">
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {training.description || "Rejoignez nos ateliers pratiques au laboratoire NCP pour apprendre la formulation chimique de savons, détergents et cosmétiques."}
-          </p>
+          {/* Modal Body */}
+          <div className="p-4 sm:p-6 space-y-3.5 text-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              {training.description || "Rejoignez nos ateliers pratiques au laboratoire NCP pour apprendre la formulation chimique de savons, détergents et cosmétiques."}
+            </p>
 
-          {/* Training Key Details */}
-          <div className="bg-muted/40 rounded-2xl p-4 border border-border space-y-2.5 text-xs">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-muted-foreground font-medium">
-                <Calendar className="h-4 w-4 text-primary" /> Dates de la session :
-              </span>
-              <span className="font-bold text-foreground">
-                Du {new Date(training.date_start).toLocaleDateString("fr-FR")} au {new Date(training.date_end).toLocaleDateString("fr-FR")}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 text-muted-foreground font-medium">
-                <MapPin className="h-4 w-4 text-primary" /> Lieu de formation :
-              </span>
-              <span className="font-bold text-foreground">{training.location}</span>
-            </div>
-
-            <div className="flex items-center justify-between pt-1 border-t border-border/60">
-              <span className="flex items-center gap-2 text-muted-foreground font-medium">
-                <GraduationCap className="h-4 w-4 text-accent" /> Disponibilité :
-              </span>
-              {!isFull ? (
-                <span className="font-extrabold text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
-                  {remainingSeats} place{remainingSeats > 1 ? "s" : ""} restante{remainingSeats > 1 ? "s" : ""}
+            {/* Training Key Details */}
+            <div className="bg-muted/40 rounded-2xl p-3 sm:p-4 border border-border space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
+                  <Calendar className="h-3.5 w-3.5 text-primary shrink-0" /> Dates :
                 </span>
-              ) : (
-                <span className="font-bold text-red-600">Session complète</span>
-              )}
+                <span className="font-bold text-foreground text-right">
+                  Du {new Date(training.date_start).toLocaleDateString("fr-FR")} au {new Date(training.date_end).toLocaleDateString("fr-FR")}
+                </span>
+              </div>
+
+              <div className="flex items-start justify-between gap-2">
+                <span className="flex items-center gap-1.5 text-muted-foreground font-medium shrink-0">
+                  <MapPin className="h-3.5 w-3.5 text-primary shrink-0" /> Lieu :
+                </span>
+                <span className="font-bold text-foreground text-right">{training.location}</span>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-border/60">
+                <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
+                  <GraduationCap className="h-3.5 w-3.5 text-accent shrink-0" /> Disponibilité :
+                </span>
+                {!isFull ? (
+                  <span className="font-extrabold text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                    {remainingSeats} place{remainingSeats > 1 ? "s" : ""} restante{remainingSeats > 1 ? "s" : ""}
+                  </span>
+                ) : (
+                  <span className="font-bold text-red-600">Session complète</span>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Pricing & Reassurance */}
-          <div className="flex items-center justify-between pt-1">
-            <div>
-              <span className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider block">
-                Tarif d&apos;inscription :
-              </span>
-              <span className="font-heading font-extrabold text-2xl text-primary">
-                {Number(training.price).toLocaleString()} <span className="text-xs font-normal text-muted-foreground">HTG</span>
-              </span>
+            {/* Pricing & Reassurance */}
+            <div className="flex items-center justify-between pt-1">
+              <div>
+                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider block">
+                  Tarif :
+                </span>
+                <span className="font-heading font-extrabold text-xl sm:text-2xl text-primary">
+                  {Number(training.price).toLocaleString()} <span className="text-xs font-normal text-muted-foreground">HTG</span>
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-xl">
+                <Smartphone className="h-3.5 w-3.5 text-red-600" />
+                <span>MonCash disponible</span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-xl">
-              <Smartphone className="h-3.5 w-3.5 text-red-600" />
-              <span>Paiement <strong>MonCash</strong> disponible</span>
+            {/* Highlights */}
+            <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-muted-foreground pt-1 border-t border-border/60">
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-600" /> Certificat officiel</span>
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-600" /> 100% Pratique</span>
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-600" /> Matières fournies</span>
             </div>
-          </div>
 
-          {/* Highlights */}
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/60">
-            <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> Certificat officiel</span>
-            <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> 100% Pratique</span>
-            <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> Matières fournies</span>
-          </div>
+            {/* Action Buttons */}
+            <div className="pt-2 flex flex-col gap-2">
+              <Button
+                asChild
+                size="lg"
+                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-5 rounded-2xl shadow-lg shadow-orange-500/25 text-xs sm:text-sm cursor-pointer"
+                onClick={handleClose}
+              >
+                <Link href={`/formations/${training.slug}`}>
+                  Découvrir & S&apos;inscrire <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Link>
+              </Button>
 
-          {/* Action Buttons */}
-          <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
-            <Button
-              asChild
-              size="lg"
-              className="w-full sm:flex-1 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold py-6 rounded-2xl shadow-lg shadow-orange-500/25 text-sm cursor-pointer"
-              onClick={handleClose}
-            >
-              <Link href={`/formations/${training.slug}`}>
-                Découvrir & S&apos;inscrire <ArrowRight className="ml-1.5 h-4 w-4" />
-              </Link>
-            </Button>
-            <button
-              onClick={handleClose}
-              className="py-2 px-4 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-xl hover:bg-muted/50"
-            >
-              Plus tard
-            </button>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="w-full py-2.5 text-xs font-bold text-muted-foreground hover:text-foreground bg-muted/30 hover:bg-muted/60 transition-colors cursor-pointer rounded-xl border border-border/50 text-center"
+              >
+                Fermer cette fenêtre
+              </button>
+            </div>
           </div>
         </div>
       </div>
