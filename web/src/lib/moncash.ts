@@ -83,6 +83,7 @@ export async function createMonCashPayment(params: MonCashPaymentRequest): Promi
             body: JSON.stringify({
               orderId: params.orderId,
               amount: params.amount,
+              returnUrl: `${process.env.NEXT_PUBLIC_APP_URL || "https://nikychemical.com"}/paiement-formation/retour`,
             }),
             cache: "no-store",
           }).catch(() => null);

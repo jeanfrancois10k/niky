@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       payment_method: payment_method || "moncash",
       photo_permission: photo_permission !== false,
       amount_paid: Number(amount) || 0,
-      status: "confirmed",
+      status: "pending_payment",
       created_at: new Date().toISOString(),
     };
 

@@ -40,10 +40,18 @@ interface DossierData {
 
 export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess }: Props) {
   const { showLoading, showSuccess, showError, hideToast } = useToast();
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [completedDossier, setCompletedDossier] = useState<DossierData | null>(null);
+  const [registrationId, setRegistrationId] = useState<string | null>(null);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [moncashResult, setMoncashResult] = useState<{
+    redirectUrl?: string;
+    reference: string;
+    mode?: string;
+    instructions?: { steps: string[] };
+  } | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -189,6 +197,10 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
         showError("Veuillez indiquer votre adresse.");
         return false;
       }
+      if (!formData.id_card_photo) {
+        showError("Veuillez prendre en photo ou importer votre pièce d'identité (CIN, Passeport ou Permis).");
+        return false;
+      }
     }
 
     if (currentStep === 2) {
@@ -207,10 +219,6 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
     }
 
     if (currentStep === 3) {
-      if (!formData.id_card_photo) {
-        showError("Veuillez prendre en photo ou importer votre pièce d'identité (CIN, Passeport ou Permis).");
-        return false;
-      }
       if (!formData.emergency_contact_name.trim() || !formData.emergency_contact_phone.trim()) {
         showError("Veuillez renseigner la personne à contacter en cas d'urgence.");
         return false;
@@ -222,12 +230,12 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
 
   const handleNext = () => {
     if (validateStep(step)) {
-      setStep((prev) => (prev + 1) as 1 | 2 | 3 | 4);
+      setStep((prev) => (prev + 1) as 1 | 2 | 3 | 4 | 5);
     }
   };
 
   const handlePrev = () => {
-    setStep((prev) => (prev - 1) as 1 | 2 | 3 | 4);
+    setStep((prev) => (prev - 1) as 1 | 2 | 3 | 4 | 5);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -295,16 +303,92 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
       }
 
       hideToast(toastId);
-      showSuccess("Votre inscription NAF a été enregistrée avec succès !");
-      setCompletedDossier(json.data?.dossier || payload);
-      setIsSuccess(true);
-      if (onSuccess) onSuccess();
+      const dossier = json.data?.dossier || payload;
+      setCompletedDossier(dossier);
+      setRegistrationId(json.data?.id || null);
+
+      // If payment method is sur_place, skip payment step and confirm directly
+      if (formData.payment_method === "sur_place") {
+        // Confirm directly (no online payment needed)
+        await fetch("/api/trainings/confirm-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ registration_id: json.data?.id }),
+        });
+        showSuccess("Votre inscription NAF a été enregistrée avec succès !");
+        setIsSuccess(true);
+        if (onSuccess) onSuccess();
+      } else {
+        // Go to payment step 5
+        setStep(5);
+      }
     } catch (err: unknown) {
       hideToast(toastId);
       const message = err instanceof Error ? err.message : "Impossible de finaliser l'inscription.";
       showError(message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleMonCashPayment = async () => {
+    setIsPaymentLoading(true);
+    const toastId = showLoading("Initialisation du paiement MonCash...");
+    try {
+      const res = await fetch("/api/payment/moncash", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: registrationId || `NAF-${Date.now()}`,
+          amount: training.price,
+          phone: formData.customer_phone.trim(),
+          customerName: `${formData.last_name.trim()} ${formData.first_name.trim()}`,
+          description: `Inscription NAF — ${training.title}`,
+        }),
+      });
+      const result = await res.json();
+      hideToast(toastId);
+
+      if (result.redirectUrl) {
+        // Store registration info for return page
+        sessionStorage.setItem("naf_reg_id", registrationId || "");
+        sessionStorage.setItem("naf_mc_ref", result.reference || "");
+        sessionStorage.setItem("naf_reg_number", (completedDossier?.registration_number as string) || "");
+        // Redirect to MonCash gateway
+        window.location.href = result.redirectUrl;
+      } else {
+        // Fallback: show manual instructions
+        setMoncashResult(result);
+      }
+    } catch {
+      hideToast(toastId);
+      showError("Erreur de connexion MonCash. Veuillez réessayer.");
+    } finally {
+      setIsPaymentLoading(false);
+    }
+  };
+
+  const handleConfirmManualPayment = async () => {
+    setIsPaymentLoading(true);
+    const toastId = showLoading("Confirmation de votre inscription...");
+    try {
+      await fetch("/api/trainings/confirm-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          registration_id: registrationId,
+          moncash_reference: moncashResult?.reference,
+        }),
+      });
+      hideToast(toastId);
+      showSuccess("Inscription confirmée ! Un email de confirmation vous a été envoyé.");
+      setIsSuccess(true);
+      if (onSuccess) onSuccess();
+    } catch {
+      hideToast(toastId);
+      showError("Erreur lors de la confirmation. Contactez-nous au +509 47 29 76 55.");
+    } finally {
+      setIsPaymentLoading(false);
     }
   };
 
@@ -418,12 +502,13 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
               <h3 className="text-xl font-bold font-heading text-foreground line-clamp-1">{training.title}</h3>
 
               {/* Steps Progress */}
-              <div className="grid grid-cols-4 gap-2 mt-4">
+              <div className="grid grid-cols-5 gap-1.5 mt-4">
                 {[
                   { num: 1, title: "Identité", icon: User },
-                  { num: 2, title: "Santé & Mobilité", icon: HeartPulse },
-                  { num: 3, title: "Pièce d'Identité", icon: Camera },
-                  { num: 4, title: "Contrat & Paiement", icon: FileText },
+                  { num: 2, title: "Santé", icon: HeartPulse },
+                  { num: 3, title: "Urgence", icon: PhoneCall },
+                  { num: 4, title: "Contrat", icon: FileText },
+                  { num: 5, title: "Paiement", icon: Smartphone },
                 ].map((s) => {
                   const Icon = s.icon;
                   const isActive = step === s.num;
@@ -432,11 +517,13 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
                     <div
                       key={s.num}
                       onClick={() => {
-                        if (isDone) setStep(s.num as 1 | 2 | 3 | 4);
+                        if (isDone && s.num < 5) setStep(s.num as 1 | 2 | 3 | 4 | 5);
                       }}
-                      className={`flex flex-col items-center text-center p-2 rounded-xl transition-all cursor-pointer ${
+                      className={`flex flex-col items-center text-center p-2 rounded-xl transition-all ${isDone && s.num < 5 ? "cursor-pointer" : "cursor-default"} ${
                         isActive
-                          ? "bg-primary text-white shadow-sm"
+                          ? s.num === 5
+                            ? "bg-green-600 text-white shadow-sm"
+                            : "bg-primary text-white shadow-sm"
                           : isDone
                           ? "bg-primary/10 text-primary hover:bg-primary/20"
                           : "bg-muted/40 text-muted-foreground"
@@ -642,6 +729,129 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
                         className="w-full pl-9 pr-3.5 py-2.5 bg-muted/20 border border-border rounded-xl focus:border-primary focus:ring-1 focus:ring-primary outline-hidden text-sm"
                       />
                     </div>
+                  </div>
+
+                  {/* ID Photo (Pièce d'Identité) in Step 1 */}
+                  <div className="border border-border rounded-2xl p-4 bg-muted/10 space-y-3 pt-4 mt-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                        <Camera className="h-4 w-4 text-primary" />
+                        Pièce d&apos;Identité Officielle *
+                      </label>
+                      {formData.id_card_photo && (
+                        <span className="text-[11px] text-green-600 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Pièce enregistrée
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      CIN / NIF, Passeport valide ou Permis de conduire. Vous pouvez importer un fichier ou prendre une photo directement.
+                    </p>
+
+                    {/* Camera Active View */}
+                    {isCameraActive && (
+                      <div className="relative rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center border-2 border-primary">
+                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 pointer-events-none border-2 border-dashed border-white/60 m-4 rounded-xl flex items-center justify-center">
+                          <span className="bg-black/60 text-white text-[11px] px-2.5 py-1 rounded-full">
+                            Cadrez votre pièce d&apos;identité ici
+                          </span>
+                        </div>
+                        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={capturePhoto}
+                            className="py-2 px-5 bg-primary hover:bg-primary/90 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-2 cursor-pointer"
+                          >
+                            <Camera className="h-4 w-4" /> Prendre la photo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={stopCamera}
+                            className="py-2 px-4 bg-black/60 hover:bg-black/80 text-white font-medium text-xs rounded-xl cursor-pointer"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Preview of captured photo */}
+                    {!isCameraActive && formData.id_card_photo && (
+                      <div className="relative rounded-2xl overflow-hidden border border-border bg-black/5 aspect-video flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={formData.id_card_photo}
+                          alt="Pièce d'identité"
+                          className="w-full h-full object-contain"
+                        />
+                        <div className="absolute top-2 right-2 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, id_card_photo: "" });
+                              startCamera();
+                            }}
+                            className="p-2 bg-black/70 hover:bg-black text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
+                            title="Reprendre avec la caméra"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" /> Reprendre
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData({ ...formData, id_card_photo: "" })}
+                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+                            title="Supprimer la photo"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Camera Trigger & Upload Buttons */}
+                    {!isCameraActive && !formData.id_card_photo && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="py-4 px-4 bg-primary text-white rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-2 hover:bg-primary/90 transition-all cursor-pointer shadow-sm"
+                        >
+                          <div className="p-2.5 bg-white/20 rounded-full">
+                            <Upload className="h-5 w-5 text-white" />
+                          </div>
+                          <span>Importer une photo (fichier)</span>
+                          <span className="text-[10px] text-white/80 font-normal">JPG, PNG (Max 5 Mo)</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={startCamera}
+                          className="py-4 px-4 bg-white border-2 border-dashed border-border rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 text-foreground transition-all cursor-pointer"
+                        >
+                          <div className="p-2.5 bg-muted rounded-full">
+                            <Camera className="h-5 w-5 text-primary" />
+                          </div>
+                          <span>Prendre avec la Caméra</span>
+                          <span className="text-[10px] text-muted-foreground font-normal">Webcam ou smartphone direct</span>
+                        </button>
+
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                      </div>
+                    )}
+
+                    {cameraError && (
+                      <div className="p-2.5 bg-red-50 text-red-700 text-xs rounded-xl flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span>{cameraError}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -877,135 +1087,52 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
                 </div>
               )}
 
-              {/* STEP 3: ID Photo & Emergency Contact */}
+              {/* STEP 3: Emergency Contact */}
               {step === 3 && (
                 <div className="space-y-4 animate-in fade-in duration-200">
-                  <div className="bg-primary/5 p-3 rounded-2xl border border-primary/20 text-xs text-primary flex items-start gap-2">
-                    <Camera className="h-4 w-4 shrink-0 mt-0.5" />
-                    <span>
-                      <strong>Prise de photo obligatoire :</strong> Prenez en photo directement votre pièce d&apos;identité (CIN / NIF, Passeport ou Permis de conduire) ou importez une photo claire depuis votre appareil.
-                    </span>
-                  </div>
-
-                  {/* ID Photo Capture Container */}
-                  <div className="border border-border rounded-2xl p-4 bg-muted/10 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold uppercase tracking-wider text-foreground">
-                        Photo de votre Pièce d&apos;Identité *
-                      </label>
-                      {formData.id_card_photo && (
-                        <span className="text-[11px] text-green-600 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="h-3.5 w-3.5" /> Pièce enregistrée
-                        </span>
-                      )}
+                  {/* ID Photo Summary Badge from Step 1 */}
+                  {formData.id_card_photo ? (
+                    <div className="bg-green-50 border border-green-200 rounded-2xl p-3 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-xl overflow-hidden border border-green-300 bg-white shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={formData.id_card_photo}
+                            alt="Pièce d'identité"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <div className="font-bold text-green-900 flex items-center gap-1">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                            Pièce d&apos;identité enregistrée
+                          </div>
+                          <div className="text-[11px] text-green-700">Téléversée à l&apos;étape 1</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="py-1.5 px-3 bg-white border border-green-300 text-green-800 rounded-xl text-xs font-semibold hover:bg-green-100 transition-colors cursor-pointer"
+                      >
+                        Modifier
+                      </button>
                     </div>
-
-                    {/* Camera Active View */}
-                    {isCameraActive && (
-                      <div className="relative rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center border-2 border-primary">
-                        <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 pointer-events-none border-2 border-dashed border-white/60 m-4 rounded-xl flex items-center justify-center">
-                          <span className="bg-black/60 text-white text-[11px] px-2.5 py-1 rounded-full">
-                            Cadrez votre pièce d&apos;identité ici
-                          </span>
-                        </div>
-                        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-3">
-                          <button
-                            type="button"
-                            onClick={capturePhoto}
-                            className="py-2 px-5 bg-primary hover:bg-primary/90 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-2 cursor-pointer"
-                          >
-                            <Camera className="h-4 w-4" /> Prendre la photo
-                          </button>
-                          <button
-                            type="button"
-                            onClick={stopCamera}
-                            className="py-2 px-4 bg-black/60 hover:bg-black/80 text-white font-medium text-xs rounded-xl cursor-pointer"
-                          >
-                            Annuler
-                          </button>
-                        </div>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between text-xs text-amber-900">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
+                        <span>Pièce d&apos;identité manquante</span>
                       </div>
-                    )}
-
-                    {/* Preview of captured photo */}
-                    {!isCameraActive && formData.id_card_photo && (
-                      <div className="relative rounded-2xl overflow-hidden border border-border bg-black/5 aspect-video flex items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={formData.id_card_photo}
-                          alt="Pièce d'identité"
-                          className="w-full h-full object-contain"
-                        />
-                        <div className="absolute top-2 right-2 flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFormData({ ...formData, id_card_photo: "" });
-                              startCamera();
-                            }}
-                            className="p-2 bg-black/70 hover:bg-black text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
-                            title="Reprendre la photo"
-                          >
-                            <RefreshCw className="h-3.5 w-3.5" /> Reprendre
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, id_card_photo: "" })}
-                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold cursor-pointer"
-                            title="Supprimer la photo"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Camera Trigger & Upload Buttons */}
-                    {!isCameraActive && !formData.id_card_photo && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <button
-                          type="button"
-                          onClick={startCamera}
-                          className="py-4 px-4 bg-primary text-white rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-2 hover:bg-primary/90 transition-all cursor-pointer shadow-sm"
-                        >
-                          <div className="p-2.5 bg-white/20 rounded-full">
-                            <Camera className="h-5 w-5" />
-                          </div>
-                          <span>Prendre la photo avec la Caméra</span>
-                          <span className="text-[10px] text-white/80 font-normal">Webcam ou appareil photo direct</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="py-4 px-4 bg-white border-2 border-dashed border-border rounded-2xl font-bold text-xs flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 text-foreground transition-all cursor-pointer"
-                        >
-                          <div className="p-2.5 bg-muted rounded-full">
-                            <Upload className="h-5 w-5 text-muted-foreground" />
-                          </div>
-                          <span>Importer une photo depuis l&apos;appareil</span>
-                          <span className="text-[10px] text-muted-foreground font-normal">JPG, PNG (Max 5 Mo)</span>
-                        </button>
-
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                      </div>
-                    )}
-
-                    {cameraError && (
-                      <div className="p-2.5 bg-red-50 text-red-700 text-xs rounded-xl flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 shrink-0" />
-                        <span>{cameraError}</span>
-                      </div>
-                    )}
-                  </div>
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="py-1.5 px-3 bg-amber-600 text-white rounded-xl text-xs font-semibold hover:bg-amber-700 transition-colors cursor-pointer"
+                      >
+                        Ajouter à l&apos;étape 1
+                      </button>
+                    </div>
+                  )}
 
                   {/* Emergency Contact */}
                   <div className="border border-border rounded-2xl p-4 bg-white space-y-3">
@@ -1189,11 +1316,105 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
                   </div>
                 </div>
               )}
+
+              {/* STEP 5: MonCash Payment */}
+              {step === 5 && (
+                <div className="space-y-5 animate-in fade-in duration-200">
+                  {/* Header */}
+                  <div className="text-center space-y-1">
+                    <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                      <Smartphone className="h-7 w-7 text-green-600" />
+                    </div>
+                    <h4 className="text-lg font-bold text-foreground">Paiement MonCash</h4>
+                    <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                      Votre dossier est réservé. Finalisez votre inscription en payant maintenant via MonCash.
+                    </p>
+                  </div>
+
+                  {/* Amount Card */}
+                  <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-5 text-white text-center shadow-lg">
+                    <div className="text-xs font-semibold text-blue-200 uppercase tracking-wider mb-1">Montant à payer</div>
+                    <div className="text-4xl font-black tracking-tight">{Number(training.price).toLocaleString()} HTG</div>
+                    <div className="text-xs text-blue-200 mt-1">{training.title}</div>
+                  </div>
+
+                  {/* Summary */}
+                  <div className="bg-muted/40 rounded-2xl p-4 text-xs space-y-2 border border-border">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Participant</span>
+                      <span className="font-bold">{formData.first_name} {formData.last_name.toUpperCase()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Téléphone</span>
+                      <span className="font-semibold">{formData.customer_phone}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">N° de dossier</span>
+                      <span className="font-mono font-bold text-primary">
+                        {(completedDossier?.registration_number as string) || "—"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {!moncashResult ? (
+                    <>
+                      {/* MonCash Pay Button */}
+                      <button
+                        type="button"
+                        onClick={handleMonCashPayment}
+                        disabled={isPaymentLoading}
+                        className="w-full py-4 px-6 bg-[#e20613] hover:bg-[#c20510] text-white font-black text-sm rounded-2xl flex items-center justify-center gap-3 transition-all shadow-lg cursor-pointer disabled:opacity-60"
+                      >
+                        {isPaymentLoading ? (
+                          <><Loader2 className="h-5 w-5 animate-spin" /> Connexion MonCash...</>
+                        ) : (
+                          <>
+                            <Smartphone className="h-5 w-5" />
+                            Payer {Number(training.price).toLocaleString()} HTG via MonCash
+                          </>
+                        )}
+                      </button>
+                      <p className="text-center text-[11px] text-muted-foreground">
+                        🔒 Paiement sécurisé via le portail officiel MonCash Digicel
+                      </p>
+                    </>
+                  ) : (
+                    /* Fallback: Manual MonCash instructions */
+                    <div className="space-y-3">
+                      <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-xs text-red-950 space-y-2">
+                        <div className="flex items-center gap-1.5 font-bold text-red-700">
+                          <Smartphone className="h-4 w-4" /> Instructions MonCash
+                        </div>
+                        <ol className="list-decimal ml-4 space-y-1">
+                          {moncashResult.instructions?.steps.map((s, i) => (
+                            <li key={i}>{s}</li>
+                          ))}
+                        </ol>
+                        <div className="pt-2 border-t border-red-200 font-mono text-xs font-bold text-red-800">
+                          Référence : {moncashResult.reference}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleConfirmManualPayment}
+                        disabled={isPaymentLoading}
+                        className="w-full py-3.5 px-6 bg-green-600 hover:bg-green-700 text-white font-bold text-sm rounded-2xl flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-60"
+                      >
+                        {isPaymentLoading ? (
+                          <><Loader2 className="h-4 w-4 animate-spin" /> Confirmation...</>
+                        ) : (
+                          <><CheckCircle2 className="h-4 w-4" /> J&apos;ai effectué le paiement</>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </form>
 
             {/* Stepper Navigation Footer */}
             <div className="pt-3 border-t border-border flex items-center justify-between gap-3">
-              {step > 1 ? (
+              {step > 1 && step < 5 ? (
                 <button
                   type="button"
                   onClick={handlePrev}
@@ -1213,7 +1434,7 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
                 >
                   Suivant <ChevronRight className="h-4 w-4" />
                 </button>
-              ) : (
+              ) : step === 4 ? (
                 <button
                   type="button"
                   onClick={handleSubmit}
@@ -1226,11 +1447,11 @@ export function TrainingRegistrationModal({ training, isOpen, onClose, onSuccess
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="h-4 w-4" /> Valider mon Inscription NAF ({Number(training.price).toLocaleString()} HTG)
+                      <ChevronRight className="h-4 w-4" /> Continuer au paiement
                     </>
                   )}
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         )}
