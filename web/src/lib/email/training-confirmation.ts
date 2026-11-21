@@ -1,7 +1,3 @@
-import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY || "re_build_placeholder_key");
-
 const FROM_EMAIL = process.env.FROM_EMAIL || "onboarding@resend.dev";
 const REPLY_TO = process.env.REPLY_TO_EMAIL || "contact@nikychemical.com";
 
@@ -167,17 +163,25 @@ export async function sendTrainingConfirmationEmail(
   }
 
   try {
-    const { error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: data.studentEmail,
-      replyTo: REPLY_TO,
-      subject: `✅ Confirmation NAF — ${data.registrationNumber} | ${data.trainingTitle}`,
-      html: buildEmailHtml(data),
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [data.studentEmail],
+        reply_to: REPLY_TO,
+        subject: `✅ Confirmation NAF — ${data.registrationNumber} | ${data.trainingTitle}`,
+        html: buildEmailHtml(data),
+      }),
     });
 
-    if (error) {
-      console.error("Resend email error:", error);
-      return { success: false, error: error.message };
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      console.error("Resend API error:", errData);
+      return { success: false, error: JSON.stringify(errData) };
     }
 
     return { success: true };
