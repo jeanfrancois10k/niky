@@ -7,6 +7,7 @@ import { getFirstImage } from "@/lib/utils";
 import { FlaskConical, Smartphone, Sparkles, CheckCircle2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 export const revalidate = 0;
 
 async function getProducts(category?: string): Promise<Product[]> {

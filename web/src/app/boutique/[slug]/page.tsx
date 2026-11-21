@@ -7,6 +7,7 @@ import { getFirstImage } from "@/lib/utils";
 import { Smartphone, ShieldCheck, Truck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 export const revalidate = 0;
 
 async function getProduct(slug: string): Promise<Product | null> {

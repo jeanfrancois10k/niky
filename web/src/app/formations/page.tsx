@@ -4,6 +4,7 @@ import { supabase, type Training } from "@/lib/supabase";
 import { Calendar, MapPin, Users, GraduationCap, Smartphone, Sparkles, CheckCircle2, Award, Globe2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 export const revalidate = 0;
 
 async function getTrainings(): Promise<Training[]> {

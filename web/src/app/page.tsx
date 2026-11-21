@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn, getFirstImage } from "@/lib/utils";

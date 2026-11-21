@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createMonCashPayment } from "@/lib/moncash";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export async function POST(request: NextRequest) {
   try {

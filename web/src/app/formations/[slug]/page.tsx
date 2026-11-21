@@ -5,6 +5,7 @@ import { CheckCircle2 } from "lucide-react";
 import { TrainingRegistrationSection } from "@/components/TrainingRegistrationSection";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 export const revalidate = 0;
 
 async function getTraining(slug: string): Promise<Training | null> {
