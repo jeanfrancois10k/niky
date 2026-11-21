@@ -9,6 +9,7 @@ const D1_DATABASE_ID = process.env.CLOUDFLARE_D1_ID || "ad5adaac-8ccc-4027-9eb2-
 const CLOUDFLARE_EMAIL = process.env.CLOUDFLARE_EMAIL || "jeudynikenson2@gmail.com";
 const CLOUDFLARE_API_KEY = process.env.CLOUDFLARE_API_KEY || "";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getNativeD1Binding(): any {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const g = globalThis as any;

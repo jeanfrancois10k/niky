@@ -6,8 +6,10 @@ import { MOCK_PRODUCTS } from "@/lib/data";
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function GET() {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let list: any[] = [];
     try {
       list = await queryD1("SELECT * FROM products ORDER BY created_at DESC");

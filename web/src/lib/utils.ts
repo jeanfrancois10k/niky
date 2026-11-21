@@ -16,7 +16,7 @@ export function getFirstImage(images: string[] | string | null | undefined): str
           const vals = Object.values(parsed);
           if (vals[0] && typeof vals[0] === "string") return vals[0];
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
