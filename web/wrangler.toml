@@ -7,3 +7,8 @@ compatibility_flags = ["nodejs_compat"]
 binding = "DB"
 database_name = "niky-db"
 database_id = "ad5adaac-8ccc-4027-9eb2-e0fd13fa55d0"
+
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://rdhmszfqspadnozkxfbx.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJkaG1zemZxc3BhZG5vemt4ZmJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MjIyMjcsImV4cCI6MjEwOTE5ODIyN30.1yR4nptSH41a6BZbXPqbPsGQGLYJ2FiSW_aLxkh7mgI"
+NODE_VERSION = "20"
