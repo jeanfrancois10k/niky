@@ -1,0 +1,9 @@
+name = "niky-web"
+pages_build_output_dir = ".vercel/output/static"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "niky-db"
+database_id = "ad5adaac-8ccc-4027-9eb2-e0fd13fa55d0"

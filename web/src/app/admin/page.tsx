@@ -2,9 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase, type Order, type Product, type Training } from "@/lib/supabase";
+import { type Order, type Product, type Training } from "@/lib/supabase";
 import { Package, ShoppingCart, GraduationCap, ArrowRight, Loader2, UserCheck, TrendingUp, Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+interface OrdersApiResponse {
+  orders?: Order[];
+  data?: Order[];
+  success?: boolean;
+}
 
 interface ParticipantRecord {
   id: string;
@@ -37,14 +43,15 @@ export default function AdminDashboard() {
       try {
         const [productsRes, ordersRes, trainingsRes, registrationsRes] = await Promise.all([
           fetch("/api/admin/products").then((r) => r.json()).catch(() => ({ success: false, data: [] })),
-          supabase.from("orders").select("*").order("created_at", { ascending: false }),
+          fetch("/api/admin/orders").then((r) => r.json()).catch(() => ({ orders: [] })),
           fetch("/api/admin/trainings").then((r) => r.json()).catch(() => ({ success: false, data: [] })),
           fetch("/api/admin/trainings/registrations").then((r) => r.json()).catch(() => ({ success: false, data: [] })),
         ]);
 
         const products = (productsRes.data || []) as Product[];
         const trainings = (trainingsRes.data || []) as Training[];
-        const rawOrders = (ordersRes.data || []) as Order[];
+        const ordersData = ordersRes as OrdersApiResponse;
+        const rawOrders = (ordersData.orders || ordersData.data || []) as Order[];
         const participants = (registrationsRes.data || []) as ParticipantRecord[];
 
         // Filter product orders (exclude training notes if stored in orders)

@@ -9,3 +9,12 @@ build/
 web/node_modules/
 web/.next/
 web/.env*.local
+
+.wrangler/
+web/.wrangler/
+*.backup.gz
+setup-*.js
+import-*.js
+generate-*.js
+restore_*.sql
+schema_*.sql

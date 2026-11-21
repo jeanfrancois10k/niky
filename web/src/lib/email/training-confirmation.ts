@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || "re_build_placeholder_key");
 
 const FROM_EMAIL = process.env.FROM_EMAIL || "onboarding@resend.dev";
 const REPLY_TO = process.env.REPLY_TO_EMAIL || "contact@nikychemical.com";
@@ -156,6 +156,11 @@ function buildEmailHtml(data: TrainingConfirmationEmailData): string {
 export async function sendTrainingConfirmationEmail(
   data: TrainingConfirmationEmailData
 ): Promise<{ success: boolean; error?: string }> {
+  if (!process.env.RESEND_API_KEY || process.env.RESEND_API_KEY === "re_build_placeholder_key") {
+    console.warn("RESEND_API_KEY is not configured, skipping confirmation email.");
+    return { success: false, error: "RESEND_API_KEY not configured" };
+  }
+
   if (!data.studentEmail) {
     console.warn("No student email provided, skipping confirmation email.");
     return { success: false, error: "No email address" };
