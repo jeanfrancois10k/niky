@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { queryD1 } from "@/lib/d1";
 
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
@@ -30,7 +31,17 @@ export async function GET() {
   try {
     const list: ParticipantRecord[] = [];
 
-    // 1. Try to fetch from training_registrations table
+    // 1. Try D1 training_registrations table
+    try {
+      const regD1 = await queryD1<ParticipantRecord>(
+        "SELECT * FROM training_registrations ORDER BY created_at DESC"
+      );
+      if (regD1 && regD1.length > 0) {
+        list.push(...regD1);
+      }
+    } catch {}
+
+    // 2. Try Supabase training_registrations
     try {
       const { data, error } = await supabaseAdmin
         .from("training_registrations")
@@ -38,22 +49,24 @@ export async function GET() {
         .order("created_at", { ascending: false });
 
       if (!error && data && data.length > 0) {
-        list.push(...(data as ParticipantRecord[]));
+        for (const item of data) {
+          if (!list.some((existing) => existing.id === item.id)) {
+            list.push(item as ParticipantRecord);
+          }
+        }
       }
-    } catch {
-      // Table may not exist yet
-    }
+    } catch {}
 
-    // 2. Fetch from orders table where items have training type or notes contains training info
+    // 3. Fetch from D1 orders table
     try {
-      const { data: orderData } = await supabaseAdmin
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const d1Orders = await queryD1<any>("SELECT * FROM orders ORDER BY created_at DESC");
+      if (d1Orders && d1Orders.length > 0) {
+        for (const o of d1Orders) {
+          let items: OrderItem[] = [];
+          try {
+            items = typeof o.items === "string" ? JSON.parse(o.items) : o.items || [];
+          } catch {}
 
-      if (orderData && orderData.length > 0) {
-        for (const o of orderData) {
-          const items: OrderItem[] = Array.isArray(o.items) ? o.items : [];
           const isTrainingOrder =
             o.notes === "INSCRIPTION_FORMATION" ||
             (typeof o.notes === "string" && o.notes.includes("NAF-")) ||
@@ -78,9 +91,7 @@ export async function GET() {
           }
         }
       }
-    } catch (e) {
-      console.warn("Error fetching training orders:", e);
-    }
+    } catch {}
 
     return NextResponse.json({ success: true, data: list });
   } catch (error: unknown) {
@@ -98,7 +109,14 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: false, error: "Missing registration id" }, { status: 400 });
     }
 
-    // Attempt delete from training_registrations then orders
+    try {
+      await queryD1("DELETE FROM training_registrations WHERE id = ?", [id]);
+    } catch {}
+
+    try {
+      await queryD1("DELETE FROM orders WHERE id = ?", [id]);
+    } catch {}
+
     try {
       await supabaseAdmin.from("training_registrations").delete().eq("id", id);
     } catch {}

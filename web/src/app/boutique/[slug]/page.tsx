@@ -40,12 +40,9 @@ async function getProduct(slug: string): Promise<Product | null> {
       // Supabase error ignored
     }
 
-    // 3. Fallback to catalog
-    const mock = MOCK_PRODUCTS.find((p) => p.slug === slug);
-    return (mock as unknown as Product) || null;
+    return null;
   } catch {
-    const mock = MOCK_PRODUCTS.find((p) => p.slug === slug);
-    return (mock as unknown as Product) || null;
+    return null;
   }
 }
 

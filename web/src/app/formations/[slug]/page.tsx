@@ -29,11 +29,9 @@ async function getTraining(slug: string): Promise<Training | null> {
       if (data) return data as Training;
     } catch {}
 
-    const mock = MOCK_TRAININGS.find((t) => t.slug === slug);
-    return (mock as unknown as Training) || null;
+    return null;
   } catch {
-    const mock = MOCK_TRAININGS.find((t) => t.slug === slug);
-    return (mock as unknown as Training) || null;
+    return null;
   }
 }
 

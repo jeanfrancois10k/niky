@@ -29,12 +29,9 @@ async function getTrainings(): Promise<Training[]> {
       } catch {}
     }
 
-    if (!list || list.length === 0) {
-      list = MOCK_TRAININGS as unknown as Training[];
-    }
-    return list;
+    return list || [];
   } catch {
-    return MOCK_TRAININGS as unknown as Training[];
+    return [];
   }
 }
 

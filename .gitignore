@@ -18,3 +18,4 @@ import-*.js
 generate-*.js
 restore_*.sql
 schema_*.sql
+manage_d1.js

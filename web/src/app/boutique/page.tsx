@@ -45,22 +45,9 @@ async function getProducts(category?: string): Promise<Product[]> {
       }
     }
 
-    // 3. Fallback to Catalog
-    if (!list || list.length === 0) {
-      let fallback = MOCK_PRODUCTS as unknown as Product[];
-      if (category && category !== "Tous") {
-        fallback = fallback.filter((p) => p.category === category);
-      }
-      list = fallback;
-    }
-
-    return list;
+    return list || [];
   } catch {
-    let fallback = MOCK_PRODUCTS as unknown as Product[];
-    if (category && category !== "Tous") {
-      fallback = fallback.filter((p) => p.category === category);
-    }
-    return fallback;
+    return [];
   }
 }
 

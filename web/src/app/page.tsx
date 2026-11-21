@@ -49,12 +49,9 @@ async function getProducts(): Promise<Product[]> {
       } catch {}
     }
 
-    if (!list || list.length === 0) {
-      list = MOCK_PRODUCTS.slice(0, 6) as unknown as Product[];
-    }
-    return list;
+    return list || [];
   } catch {
-    return MOCK_PRODUCTS.slice(0, 6) as unknown as Product[];
+    return [];
   }
 }
 

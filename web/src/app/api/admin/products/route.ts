@@ -27,13 +27,9 @@ export async function GET() {
       } catch {}
     }
 
-    if (!list || list.length === 0) {
-      list = MOCK_PRODUCTS;
-    }
-
     return NextResponse.json({ success: true, data: list || [] });
   } catch {
-    return NextResponse.json({ success: true, data: MOCK_PRODUCTS });
+    return NextResponse.json({ success: true, data: [] });
   }
 }
 
