@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { supabase, type Training } from "@/lib/supabase";
+import { queryD1 } from "@/lib/d1";
+import { MOCK_TRAININGS } from "@/lib/data";
 import { Calendar, MapPin, Users, GraduationCap, Smartphone, Sparkles, CheckCircle2, Award, Globe2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -8,16 +10,32 @@ export const runtime = "edge";
 export const revalidate = 0;
 
 async function getTrainings(): Promise<Training[]> {
-  const { data, error } = await supabase
-    .from('trainings')
-    .select('*')
-    .eq('is_active', true)
-    .order('date_start', { ascending: true });
+  try {
+    let list: Training[] = [];
+    try {
+      list = await queryD1<Training>(
+        "SELECT * FROM trainings WHERE is_active = 1 ORDER BY date_start ASC"
+      );
+    } catch {}
 
-  if (error || !data) {
-    return [];
+    if (!list || list.length === 0) {
+      try {
+        const { data } = await supabase
+          .from("trainings")
+          .select("*")
+          .eq("is_active", true)
+          .order("date_start", { ascending: true });
+        if (data && data.length > 0) list = data as Training[];
+      } catch {}
+    }
+
+    if (!list || list.length === 0) {
+      list = MOCK_TRAININGS as unknown as Training[];
+    }
+    return list;
+  } catch {
+    return MOCK_TRAININGS as unknown as Training[];
   }
-  return data;
 }
 
 export default async function FormationsPage() {

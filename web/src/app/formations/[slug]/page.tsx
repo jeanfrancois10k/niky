@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase, type Training } from "@/lib/supabase";
+import { queryD1 } from "@/lib/d1";
+import { MOCK_TRAININGS } from "@/lib/data";
 import { CheckCircle2 } from "lucide-react";
 import { TrainingRegistrationSection } from "@/components/TrainingRegistrationSection";
 
@@ -9,16 +11,30 @@ export const runtime = "edge";
 export const revalidate = 0;
 
 async function getTraining(slug: string): Promise<Training | null> {
-  const { data, error } = await supabase
-    .from('trainings')
-    .select('*')
-    .eq('slug', slug)
-    .maybeSingle();
+  try {
+    try {
+      const results = await queryD1<Training>(
+        "SELECT * FROM trainings WHERE slug = ? LIMIT 1",
+        [slug]
+      );
+      if (results && results.length > 0) return results[0];
+    } catch {}
 
-  if (error || !data) {
-    return null;
+    try {
+      const { data } = await supabase
+        .from("trainings")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle();
+      if (data) return data as Training;
+    } catch {}
+
+    const mock = MOCK_TRAININGS.find((t) => t.slug === slug);
+    return (mock as unknown as Training) || null;
+  } catch {
+    const mock = MOCK_TRAININGS.find((t) => t.slug === slug);
+    return (mock as unknown as Training) || null;
   }
-  return data;
 }
 
 export default async function TrainingDetailPage({ params }: { params: { slug: string } }) {

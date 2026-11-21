@@ -2,7 +2,8 @@ import Link from "next/link";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { BuyNowButton } from "@/components/BuyNowButton";
 import { supabase, type Product } from "@/lib/supabase";
-import { CATEGORIES } from "@/lib/data";
+import { queryD1 } from "@/lib/d1";
+import { CATEGORIES, MOCK_PRODUCTS } from "@/lib/data";
 import { getFirstImage } from "@/lib/utils";
 import { FlaskConical, Smartphone, Sparkles, CheckCircle2 } from "lucide-react";
 
@@ -11,15 +12,56 @@ export const runtime = "edge";
 export const revalidate = 0;
 
 async function getProducts(category?: string): Promise<Product[]> {
-  let query = supabase.from('products').select('*').eq('is_active', true).order('name');
-  if (category && category !== 'Tous') {
-    query = query.eq('category', category);
+  try {
+    let list: Product[] = [];
+
+    // 1. Try Cloudflare D1
+    try {
+      let sql = "SELECT * FROM products WHERE is_active = 1";
+      const params: (string | number | boolean | null)[] = [];
+      if (category && category !== "Tous") {
+        sql += " AND category = ?";
+        params.push(category);
+      }
+      sql += " ORDER BY name ASC";
+      list = await queryD1<Product>(sql, params);
+    } catch {
+      // D1 query error ignored
+    }
+
+    // 2. Try Supabase fallback
+    if (!list || list.length === 0) {
+      try {
+        let query = supabase.from("products").select("*").eq("is_active", true).order("name");
+        if (category && category !== "Tous") {
+          query = query.eq("category", category);
+        }
+        const { data } = await query;
+        if (data && data.length > 0) {
+          list = data as Product[];
+        }
+      } catch {
+        // Supabase error ignored
+      }
+    }
+
+    // 3. Fallback to Catalog
+    if (!list || list.length === 0) {
+      let fallback = MOCK_PRODUCTS as unknown as Product[];
+      if (category && category !== "Tous") {
+        fallback = fallback.filter((p) => p.category === category);
+      }
+      list = fallback;
+    }
+
+    return list;
+  } catch {
+    let fallback = MOCK_PRODUCTS as unknown as Product[];
+    if (category && category !== "Tous") {
+      fallback = fallback.filter((p) => p.category === category);
+    }
+    return fallback;
   }
-  const { data, error } = await query;
-  if (error || !data) {
-    return [];
-  }
-  return data;
 }
 
 export default async function BoutiquePage({

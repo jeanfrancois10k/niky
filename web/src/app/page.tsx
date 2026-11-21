@@ -6,6 +6,8 @@ import { cn, getFirstImage } from "@/lib/utils";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { BuyNowButton } from "@/components/BuyNowButton";
 import { supabase, type Product, type Training } from "@/lib/supabase";
+import { queryD1 } from "@/lib/d1";
+import { MOCK_PRODUCTS, MOCK_TRAININGS } from "@/lib/data";
 import { 
   ArrowRight, 
   GraduationCap, 
@@ -27,32 +29,65 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 async function getProducts(): Promise<Product[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(6);
+  try {
+    let list: Product[] = [];
+    try {
+      list = await queryD1<Product>(
+        "SELECT * FROM products WHERE is_active = 1 ORDER BY created_at DESC LIMIT 6"
+      );
+    } catch {}
 
-  if (error || !data) {
-    return [];
+    if (!list || list.length === 0) {
+      try {
+        const { data } = await supabase
+          .from("products")
+          .select("*")
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(6);
+        if (data && data.length > 0) list = data as Product[];
+      } catch {}
+    }
+
+    if (!list || list.length === 0) {
+      list = MOCK_PRODUCTS.slice(0, 6) as unknown as Product[];
+    }
+    return list;
+  } catch {
+    return MOCK_PRODUCTS.slice(0, 6) as unknown as Product[];
   }
-  return data;
 }
 
 async function getNextTraining(): Promise<Training | null> {
-  const { data, error } = await supabase
-    .from('trainings')
-    .select('*')
-    .eq('is_active', true)
-    .order('date_start', { ascending: true })
-    .limit(1)
-    .maybeSingle();
+  try {
+    let training: Training | null = null;
+    try {
+      const list = await queryD1<Training>(
+        "SELECT * FROM trainings WHERE is_active = 1 ORDER BY date_start ASC LIMIT 1"
+      );
+      if (list && list.length > 0) training = list[0];
+    } catch {}
 
-  if (error || !data) {
-    return null;
+    if (!training) {
+      try {
+        const { data } = await supabase
+          .from("trainings")
+          .select("*")
+          .eq("is_active", true)
+          .order("date_start", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (data) training = data as Training;
+      } catch {}
+    }
+
+    if (!training) {
+      training = (MOCK_TRAININGS[0] as unknown as Training) || null;
+    }
+    return training;
+  } catch {
+    return (MOCK_TRAININGS[0] as unknown as Training) || null;
   }
-  return data;
 }
 
 export default async function Home() {

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase, type Product } from "@/lib/supabase";
+import { queryD1 } from "@/lib/d1";
+import { MOCK_PRODUCTS } from "@/lib/data";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { BuyNowButton } from "@/components/BuyNowButton";
 import { getFirstImage } from "@/lib/utils";
@@ -11,16 +13,40 @@ export const runtime = "edge";
 export const revalidate = 0;
 
 async function getProduct(slug: string): Promise<Product | null> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('slug', slug)
-    .maybeSingle();
+  try {
+    // 1. Try Cloudflare D1
+    try {
+      const results = await queryD1<Product>(
+        "SELECT * FROM products WHERE slug = ? LIMIT 1",
+        [slug]
+      );
+      if (results && results.length > 0) {
+        return results[0];
+      }
+    } catch {
+      // D1 query error ignored
+    }
 
-  if (error || !data) {
-    return null;
+    // 2. Try Supabase
+    try {
+      const { data } = await supabase
+        .from("products")
+        .select("*")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (data) return data;
+    } catch {
+      // Supabase error ignored
+    }
+
+    // 3. Fallback to catalog
+    const mock = MOCK_PRODUCTS.find((p) => p.slug === slug);
+    return (mock as unknown as Product) || null;
+  } catch {
+    const mock = MOCK_PRODUCTS.find((p) => p.slug === slug);
+    return (mock as unknown as Product) || null;
   }
-  return data;
 }
 
 export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
